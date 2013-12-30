@@ -54,6 +54,7 @@
          }).
 
 -define(DUMP_STATS_INTERVAL, 500). % in milliseconds
+-define(GC_INTERVAL, 500). % in milliseconds
 
 -include("ts_macros.hrl").
 
@@ -95,6 +96,7 @@ add_match(Data,{UserId,SessionId,RequestId,TimeStamp,Bin,Tr,Name}) ->
 %%--------------------------------------------------------------------
 init([]) ->
     erlang:start_timer(?DUMP_STATS_INTERVAL, self(), dump_stats ),
+    erlang:start_timer(?GC_INTERVAL, self(), garbage_collect),
     {ok, #state{sum=dict:new()}}.
 
 %%--------------------------------------------------------------------
@@ -151,6 +153,11 @@ handle_info({timeout, _Ref, dump_stats}, State =#state{stats= Stats, match=Match
     ts_match_logger:add(MatchList),
     erlang:start_timer(?DUMP_STATS_INTERVAL, self(), dump_stats ),
     {noreply, State#state{stats=[],match=[],pages=[],requests=[],transactions=[],connections=[],sum=dict:new()}};
+
+handle_info(garbage_collect, State) ->
+    erlang:start_timer(?GC_INTERVAL, self(), garbage_collect),
+    erlang:garbage_collect(),
+    {noreply, State};
 
 handle_info(_Info, State) ->
     {noreply, State}.

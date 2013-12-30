@@ -50,6 +50,7 @@
          }).
 
 -define(DUMP_STATS_INTERVAL, 500). % in milliseconds
+-define(GC_INTERVAL, 500). % in milliseconds
 
 -include("ts_macros.hrl").
 
@@ -91,6 +92,7 @@ get_user_agent()->
 %%--------------------------------------------------------------------
 init([]) ->
     Table = ets:new(sessiontable, [set, private]),
+    erlang:start_timer(?GC_INTERVAL, self(), garbage_collect),
     {ok, #state{table=Table}}.
 
 %%--------------------------------------------------------------------
@@ -170,6 +172,10 @@ handle_cast(_Msg, State) ->
 %%          {noreply, State, Timeout} |
 %%          {stop, Reason, State}            (terminate/2 is called)
 %%--------------------------------------------------------------------
+handle_info(garbage_collect, State) ->
+    erlang:start_timer(?GC_INTERVAL, self(), garbage_collect),
+    erlang:garbage_collect(),
+    {noreply, State};
 handle_info(_Info, State) ->
     {noreply, State}.
 
