@@ -36,7 +36,7 @@
 
 %%--------------------------------------------------------------------
 %% External exports
--export([start/0, add/1, add_match/2]).
+-export([start/1, add/1, add_match/2]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,
@@ -65,9 +65,9 @@
 %% Function: start_link/0
 %% Description: Starts the server
 %%--------------------------------------------------------------------
-start() ->
+start(Name) ->
     ?LOG("Starting~n",?INFO),
-    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+    gen_server:start_link({local, Name}, ?MODULE, [], []).
 
 %%--------------------------------------------------------------------
 %% Function: add/1
@@ -75,12 +75,14 @@ start() ->
 %%              to ts_mon
 %%--------------------------------------------------------------------
 add(Data) ->
-    gen_server:cast(?MODULE, {add, Data}).
+    Srv = ts_mon_cache_sup:choose_server(),
+    gen_server:cast(Srv, {add, Data}).
 
 %% @spec add_match(Data::list(),{UserId::integer(),SessionId::integer(),RequestId::integer(),
 %%                  TimeStamp::tuple(), Transactions::list()}) -> ok
 add_match(Data,{UserId,SessionId,RequestId,TimeStamp,Bin,Tr,Name}) ->
-    gen_server:cast(?MODULE, {add_match, Data, {UserId,SessionId,RequestId,TimeStamp,Bin,Tr,Name}}).
+    Srv = ts_mon_cache_sup:choose_server(),
+    gen_server:cast(Srv, {add_match, Data, {UserId,SessionId,RequestId,TimeStamp,Bin,Tr,Name}}).
 
 %%====================================================================
 %% Server functions

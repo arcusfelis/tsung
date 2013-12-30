@@ -1,7 +1,3 @@
-%%%  This code was developped by IDEALX (http://IDEALX.org/) and
-%%%  contributors (their names can be found in the CONTRIBUTORS file).
-%%%  Copyright (C) 2000-2001 IDEALX
-%%%
 %%%  This program is free software; you can redistribute it and/or modify
 %%%  it under the terms of the GNU General Public License as published by
 %%%  the Free Software Foundation; either version 2 of the License, or
@@ -22,17 +18,18 @@
 %%% the EPL license and distribute linked combinations including
 %%% the two.
 
--module(ts_sup).
+-module(ts_mon_cache_sup).
+-define(WORKERS_COUNT, 8).
 
 -vc('$Id$ ').
--author('nicolas.niclausse@niclux.org').
+-author('arcusfelis@gmail.com').
 
 -include("ts_macros.hrl").
 
 -behaviour(supervisor).
 
 %% External exports
--export([start_link/0, start_cport/1, has_cport/1]).
+-export([start/0, choose_server/0]).
 
 %% supervisor callbacks
 -export([init/1]).
@@ -40,19 +37,14 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start_link() ->
-    ?LOG("starting supervisor ...~n",?INFO),
+start() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
-start_cport({Node, CPortName}) ->
-    ?LOGF("starting cport server ~p on node ~p ~n",[CPortName, Node],?INFO),
-    PortServer    = {CPortName, {ts_cport, start_link, [CPortName]},
-                    transient, 2000, worker, [ts_cport]},
-    supervisor:start_child({?MODULE, Node}, PortServer).
+choose_server() ->
+    srv_name(random:uniform(?WORKERS_COUNT)).
 
-has_cport(Node) ->
-    Children = supervisor:which_children({?MODULE, Node}),
-    lists:any(fun({_,_,_,[ts_cport]}) -> true; (_) -> false end, Children).
+srv_name(N) when is_integer(N) ->
+    list_to_atom("ts_mon_cache_" ++ integer_to_list(N)).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from supervisor
@@ -65,27 +57,14 @@ has_cport(Node) ->
 %%          {error, Reason}
 %%----------------------------------------------------------------------
 init([]) ->
-    ?LOG("starting",?INFO),
-
-    ClientsSup   = {ts_client_sup, {ts_client_sup, start_link, []},
-                    permanent, 2000, supervisor, [ts_client_sup]},
-    Launcher        = {ts_launcher, {ts_launcher, start, []},
-                    transient, 2000, worker, [ts_launcher]},
-    StaticLauncher  = {ts_launcher_static, {ts_launcher_static, start, []},
-                    transient, 2000, worker, [ts_launcher_static]},
-    LauncherManager  = {ts_launcher_mgr, {ts_launcher_mgr, start, []},
-                    transient, 2000, worker, [ts_launcher_mgr]},
-    SessionCache = {ts_session_cache, {ts_session_cache, start, []},
-                    transient, 2000, worker, [ts_session_cache]},
-    MonCacheSup = {ts_mon_cache_sup, {ts_mon_cache_sup, start, []},
-                    transient, 2000, worker, [ts_mon_cache_sup]},
-    IPScan = {ts_ip_scan, {ts_ip_scan, start_link, []},
-                    transient, 2000, worker, [ts_ip_scan]},
-    {ok, {{one_for_one,?retries,10},
-          [IPScan, LauncherManager, SessionCache, MonCacheSup,
-           ClientsSup, StaticLauncher, Launcher]}}.
+    ChildSpecs = [child_spec(N) || N <- lists:seq(1, ?WORKERS_COUNT)],
+    {ok,{{one_for_one,?retries,10}, ChildSpecs}}.
 
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
 
+child_spec(N) ->
+    Name = srv_name(N),
+    {Name, {ts_mon_cache, start, [Name]},
+        transient, 2000, worker, [ts_mon_cache]}.
