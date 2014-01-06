@@ -40,6 +40,7 @@
 
 -define(MAX_RETRIES,3). % max number of connection retries
 -define(RETRY_TIMEOUT,10000). % waiting time between retries (msec)
+-define(GC_INTERVAL, 5000). % in milliseconds
 
 %% External exports
 -export([start/1, next/1]).
@@ -128,6 +129,7 @@ init(#session{ id           = SessionId,
                                 undefined ->
                                     {undefined, ?size_mon_thresh}
                end,
+    erlang:start_timer(?GC_INTERVAL, self(), garbage_collect),
     {ok, think, #state_rcv{ port       = Server#server.port,
                             host       = Server#server.host,
                             session_id = SessionId,
@@ -217,6 +219,11 @@ handle_info({erlang, _Socket, Data}, wait_ack, State) ->
             end,
             {next_state, wait_ack, NewState, TimeOut}
     end;
+
+handle_info(garbage_collect, StateName, State) ->
+    erlang:garbage_collect(),
+    erlang:start_timer(?GC_INTERVAL, self(), garbage_collect),
+    {next_state, StateName, State};
 
 handle_info(Info, StateName, State = #state_rcv{protocol = Transport, socket = Socket}) ->
     handle_info2(Transport:normalize_incomming_data(Socket, Info), StateName, State).
