@@ -129,7 +129,7 @@ init(#session{ id           = SessionId,
                                 undefined ->
                                     {undefined, ?size_mon_thresh}
                end,
-    erlang:start_timer(?GC_INTERVAL, self(), garbage_collect),
+    start_garbage_collector(Pid),
     {ok, think, #state_rcv{ port       = Server#server.port,
                             host       = Server#server.host,
                             session_id = SessionId,
@@ -219,11 +219,6 @@ handle_info({erlang, _Socket, Data}, wait_ack, State) ->
             end,
             {next_state, wait_ack, NewState, TimeOut}
     end;
-
-handle_info(garbage_collect, StateName, State) ->
-    erlang:garbage_collect(),
-    erlang:start_timer(?GC_INTERVAL, self(), garbage_collect),
-    {next_state, StateName, State};
 
 handle_info(Info, StateName, State = #state_rcv{protocol = Transport, socket = Socket}) ->
     handle_info2(Transport:normalize_incomming_data(Socket, Info), StateName, State).
@@ -1260,4 +1255,14 @@ token_bucket(R,Burst,S0,T0,P1,Now,Sleep) ->
                 false->
                     {0,Wait}
             end
+    end.
+
+start_garbage_collector(Pid) ->
+    spawn_link(fun() -> gc_loop(Pid) end).
+
+gc_loop(Pid) ->
+    receive
+        after ?GC_INTERVAL ->
+            erlang:garbage_collect(Pid),
+            gc_loop(Pid)
     end.
