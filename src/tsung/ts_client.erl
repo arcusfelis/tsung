@@ -129,7 +129,7 @@ init(#session{ id           = SessionId,
                                 undefined ->
                                     {undefined, ?size_mon_thresh}
                end,
-    start_garbage_collector(Pid),
+    start_garbage_collector(self()),
     {ok, think, #state_rcv{ port       = Server#server.port,
                             host       = Server#server.host,
                             session_id = SessionId,
