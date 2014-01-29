@@ -126,7 +126,7 @@ get_message(Jabber=#jabber{type = 'chat', dest=random, prefix=Prefix, domain=Dom
         DestId    ->
             message(ts_jabber:username(Prefix,DestId), Jabber, Domain)
     end;
-get_message(Jabber=#jabber{type = 'chat', dest=jid, dest_jid=DestJID, prefix=Prefix, domain=Domain,user_server=UserServer}) ->
+get_message(Jabber=#jabber{type = 'chat', dest=jid, dest_jid=DestJID, domain=Domain}) ->
     message(jid_to_user(DestJID), Jabber, Domain);
 
 get_message(Jabber=#jabber{type = 'chat', dest=unique, prefix=Prefix, domain=Domain,user_server=UserServer})->
@@ -749,7 +749,11 @@ set_id(user_defined,User,Passwd) ->
 set_id(Id,_User,_Passwd) ->
     Id.
 
-jid_to_user([$@|_]) ->
-    [];
-jid_to_user([H|T]) ->
-    [H|jid_to_user(T)].
+jid_to_user(JID) ->
+    jid_to_user(JID, []).
+
+jid_to_user([$@|_], A) ->
+    lists:reverse(A);
+jid_to_user([H|T], A) ->
+    jid_to_user(T, [H|A]).
+
