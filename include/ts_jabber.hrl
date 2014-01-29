@@ -34,6 +34,7 @@
                          prefix}).
 
 -record(jabber, {dest,
+                 dest_jid,
                  size,
                  data,
                  type,

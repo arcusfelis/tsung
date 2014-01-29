@@ -244,7 +244,8 @@ repeat | if | change_type | foreach | set_option | interaction )*>
 <!ELEMENT jabber (xmpp_authenticate? | data?) >
 <!ATTLIST jabber
     ack         (global | local | no_ack | parse) #REQUIRED
-    destination (online | offline | random | unique | previous) "random"
+    destination (online | offline | random | unique | previous | jid) "random"
+    destination_jid CDATA   #IMPLIED
     id          NMTOKEN #IMPLIED
     size        NMTOKEN "0"
     data        CDATA   #IMPLIED
