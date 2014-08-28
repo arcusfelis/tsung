@@ -289,19 +289,21 @@ choose_domain(VHostFileId) ->
 %% Function: subst/2
 %% Purpose: Replace on the fly dynamic element
 %%----------------------------------------------------------------------
-subst(Req=#jabber{id=user_defined, username=Name,passwd=Pwd, data=Data, resource=Res, dest_jid=DestJID}, Dynvars) ->
+subst(Req=#jabber{id=user_defined, username=Name,passwd=Pwd, data=Data, resource=Res, dest_jid=DestJID, message_id=MessageId}, Dynvars) ->
     NewUser = ts_search:subst(Name,Dynvars),
     NewPwd  = ts_search:subst(Pwd,Dynvars),
     NewData = ts_search:subst(Data,Dynvars),
     NewRes = ts_search:subst(Res,Dynvars),
     NewDestJID = ts_search:subst(DestJID, Dynvars),
-    subst2(Req#jabber{username=NewUser,passwd=NewPwd,data=NewData,resource=NewRes, dest_jid=NewDestJID}, Dynvars);
+    NewMessageId = ts_search:subst(MessageId, Dynvars),
+    subst2(Req#jabber{username=NewUser,passwd=NewPwd,data=NewData,resource=NewRes, dest_jid=NewDestJID, message_id=NewMessageId}, Dynvars);
 
-subst(Req=#jabber{data=Data,resource=Res, dest_jid=DestJID}, Dynvars) ->
+subst(Req=#jabber{data=Data,resource=Res, dest_jid=DestJID, message_id=MessageId}, Dynvars) ->
     NewData = ts_search:subst(Data,Dynvars),
     NewRes = ts_search:subst(Res,Dynvars),
     NewDestJID = ts_search:subst(DestJID, Dynvars),
-    subst2(Req#jabber{data=NewData,resource=NewRes, dest_jid=NewDestJID}, Dynvars).
+    NewMessageId = ts_search:subst(MessageId, Dynvars),
+    subst2(Req#jabber{data=NewData,resource=NewRes, dest_jid=NewDestJID, message_id=NewMessageId}, Dynvars).
 
 
 subst2(Req=#jabber{type = Type}, Dynvars) when Type == 'muc:chat' ; Type == 'muc:join'; Type == 'muc:nick' ; Type == 'muc:exit' ->
@@ -348,5 +350,3 @@ username(Prefix, DestId) ->
 %%%----------------------------------------------------------------------
 password(Prefix,Id) ->
     username(Prefix,Id).
-
-

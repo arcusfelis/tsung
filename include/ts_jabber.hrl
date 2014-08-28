@@ -59,6 +59,10 @@
                  resource,
                  node_type,
                  subid,
+                 message_id, %% XMPP stanza id attribute
+                 %% if message_id = "uuid", that new uuid v4 is generated
+                 %% if message_id = undefined, than a random integer is generated
+                 %% if message_id = Value, than value is used
                  version ="1.0", %% 1.0 or "legacy", used by type=connect
                  prefix   %% username prefix
                 }).

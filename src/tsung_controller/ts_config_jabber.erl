@@ -105,6 +105,7 @@ parse_config(Element = #xmlElement{name=jabber},
     %%        Otherwise:    (any other string)
     %%          The specified string
     SubId = ts_config:getAttr(string, Element#xmlElement.attributes, 'subid', undefined),
+    MessageId = ts_config:getAttr(string, Element#xmlElement.attributes, message_id, undefined),
 
     Domain  =ts_config:get_default(Tab, jabber_domain_name, jabber_domain),
     ?LOGF("XMPP domain is ~p~n",[Domain],?DEB),
@@ -157,6 +158,7 @@ parse_config(Element = #xmlElement{name=jabber},
                                     node = Node,
                                     node_type = NodeType,
                                     subid = SubId,
+                                    message_id = MessageId,
                                     version = Version,
                                     prefix = UserPrefix
                                    }
